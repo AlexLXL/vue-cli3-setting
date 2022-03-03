@@ -16,7 +16,7 @@ module.exports = {
   configureWebpack: {
     externals: {
       vue: "Vue",
-      "element-ui": "ElementUI",
+      "element-ui": "ELEMENT",
     }
   }
 };

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="container">
     <keep-alive>
       <router-view/>
     </keep-alive>
@@ -8,7 +8,7 @@
 
 <style lang="scss">
   @import "./css/init.scss";
-  html, body, #app {
+  html, body, .container {
     height: 100%;
   }
 </style>

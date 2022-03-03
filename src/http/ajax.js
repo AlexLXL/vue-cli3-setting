@@ -5,6 +5,7 @@
 
 import axios from "axios";
 import qs from 'qs'
+import {Message} from "element-ui";
 
 class Request {
   constructor(config) {
@@ -16,6 +17,8 @@ class Request {
       transformRequest: [(params) => JSON.stringify(params)],
       headers: {'Content-Type': 'text/plain;charset=UTF-8'}
     };
+    // axios拦截器
+    this.interceptors()
   }
 
   defaults() {
@@ -25,6 +28,96 @@ class Request {
     this.axiosInstance.defaults.transformRequest = [
       (params) => qs.stringify(params, {indices: false})
     ]
+  }
+
+  //axios拦截器
+  interceptors() {
+    // 请求发送之前拦截
+    this.axiosInstance.interceptors.request.use((config) => {
+      return config
+    }, (error) => {
+      // 错误抛到业务代码
+      error.data = {}
+      error.data.msg = '服务器异常，请联系管理员！'
+      return error
+    })
+
+    /**
+     * 请求返回之后拦截
+     * res的类型是AxiosResponse<any>
+     */
+    this.axiosInstance.interceptors.response.use((res) => {
+      if (res && res.data) {
+        const data = res.data;
+        if (data.errorCode === 0) {
+          return res;
+        } else {
+          Message.error(data.message || '服务器出错!');
+          return null
+        }
+      }
+    }, (error) => { // 这里是遇到报错的回调
+      error.data = {};
+      if (error && error.response) {
+        switch (error.response.status) {
+          case 400:
+            error.data.msg = '错误请求';
+            Message.error(error.data.msg)
+            break
+          case 401:
+            error.data.msg = '未授权，请重新登录';
+            Message.error(error.data.msg)
+            break
+          case 403:
+            error.data.msg = '拒绝访问';
+            Message.error(error.data.msg)
+            break
+          case 404:
+            error.data.msg = '请求错误,未找到该资源';
+            Message.error(error.data.msg)
+            break
+          case 405:
+            error.data.msg = '请求方法未允许';
+            Message.error(error.data.msg)
+            break
+          case 408:
+            error.data.msg = '请求超时';
+            Message.error(error.data.msg)
+            break
+          case 500:
+            error.data.msg = '服务器端出错';
+            Message.error(error.data.msg)
+            break
+          case 501:
+            error.data.msg = '网络未实现';
+            Message.error(error.data.msg)
+            break
+          case 502:
+            error.data.msg = '网络错误';
+            Message.error(error.data.msg)
+            break
+          case 503:
+            error.data.msg = '服务不可用';
+            Message.error(error.data.msg)
+            break
+          case 504:
+            error.data.msg = '网络超时';
+            Message.error(error.data.msg)
+            break
+          case 505:
+            error.data.msg = 'http版本不支持该请求';
+            Message.error(error.data.msg)
+            break
+          default:
+            error.data.msg = `连接错误${error.response.status}`;
+            Message.error(error.data.msg)
+        }
+      } else {
+        error.data.msg = "连接到服务器失败";
+        Message.error(error.data.msg)
+      }
+      return error
+    })
   }
 
   /**
