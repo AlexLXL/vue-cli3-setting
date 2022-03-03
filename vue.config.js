@@ -12,5 +12,11 @@ module.exports = {
   devServer: {
     port: '8080',
     proxy: 'http://192.168.3.141:9706'
+  },
+  configureWebpack: {
+    externals: {
+      vue: "Vue",
+      "element-ui": "ElementUI",
+    }
   }
 };
