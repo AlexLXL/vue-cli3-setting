@@ -2636,11 +2636,6 @@ code-point-at@^1.0.0:
   resolved "https://registry.npmmirror.com/code-point-at/-/code-point-at-1.1.0.tgz#0d070b4d043a5bea33a2f1a40e2edb3d9a4ccf77"
   integrity sha512-RpAVKQA5T63xEj6/giIbUEtZwJ4UFIc3ZtvEkiaUERylqe8xb5IvqcgOurZLahv93CLKfxcw5YI+DZcUBRyLXA==
 
-codemirror@^5.65.2:
-  version "5.65.2"
-  resolved "https://registry.npmmirror.com/codemirror/-/codemirror-5.65.2.tgz#5799a70cb3d706e10f60e267245e3a75205d3dd9"
-  integrity sha512-SZM4Zq7XEC8Fhroqe3LxbEEX1zUPWH1wMr5zxiBuiUF64iYOUH/JI88v4tBag8MiBS8B8gRv8O1pPXGYXQ4ErA==
-
 collection-visit@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmmirror.com/collection-visit/-/collection-visit-1.0.0.tgz#4bc0373c164bc3291b4d368c829cf1a80a59dca0"
@@ -8767,6 +8762,14 @@ vue-loader@^15.9.2:
     vue-hot-reload-api "^2.3.0"
     vue-style-loader "^4.1.0"
 
+vue-monaco-editor@0.0.19:
+  version "0.0.19"
+  resolved "https://registry.npmmirror.com/vue-monaco-editor/-/vue-monaco-editor-0.0.19.tgz#eadeff1b6f1dcd894b6766383cda31e5d682ad11"
+  integrity sha512-6tgCWkC1WDPp8K1xgZ9Fp7U4ww0DIQPZC/x9Ih8hEuKPfpekzcHo2r9DaWa1lvzFMeJPv5e4mFCYhmR9+SAl8A==
+  dependencies:
+    lodash.debounce "^4.0.8"
+    vue "^2.1.0"
+
 vue-router@^3.2.0:
   version "3.5.3"
   resolved "https://registry.npmmirror.com/vue-router/-/vue-router-3.5.3.tgz#041048053e336829d05dafacf6a8fb669a2e7999"
@@ -8793,7 +8796,7 @@ vue-template-es2015-compiler@^1.9.0:
   resolved "https://registry.npmmirror.com/vue-template-es2015-compiler/-/vue-template-es2015-compiler-1.9.1.tgz#1ee3bc9a16ecbf5118be334bb15f9c46f82f5825"
   integrity sha512-4gDntzrifFnCEvyoO8PqyJDmguXgVPxKiIxrBKjIowvL9l+N66196+72XVYR8BBf1Uv1Fgt3bGevJ+sEmxfZzw==
 
-vue@^2.6.11:
+vue@^2.1.0, vue@^2.6.11:
   version "2.6.14"
   resolved "https://registry.npmmirror.com/vue/-/vue-2.6.14.tgz#e51aa5250250d569a3fbad3a8a5a687d6036e235"
   integrity sha512-x2284lgYvjOMj3Za7kqzRcUSxBboHqtgRE2zlos1qWaOye5yUmHn42LB1250NJBLRwEcdrB0JRwyPTEPhfQjiQ==
