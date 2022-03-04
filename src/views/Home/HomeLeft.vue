@@ -200,7 +200,7 @@
           Ha: this.formData.hashAlgorithm,
           Sa: this.formData.accountAlgorithm,
           action: 'deploy',
-          cc: 'function sss(name) {\\nreturn `3${name}`\\n}',
+          cc: 'function aa(name) {\\nreturn `my name is: ${name}`\\n}\\nfunction bb(age) {\\nreturn `my age is: ${age}`\\n}',
           cd: this.formData.remarks,
           cl: this.formData.language,
           mode: "Contract",
@@ -211,10 +211,12 @@
         this.formData.deployResult = result.message
         if(this.formData.deployResult) {
           this.formData.deployResultVisible = true
+          this.$EventBus.$emit('deployAccountSuccess', result.message)
         }
       }
     },
     mounted() {
+
     }
   }
 </script>

@@ -2,13 +2,13 @@
   <div class="home" v-loading="pageLoading">
     <el-row>
       <el-col :span="6">
-        <HomeLeft @switchLoading="switchLoading" msg="Welcome to Your Vue.js App"/>
+        <HomeLeft @switchLoading="switchLoading"></HomeLeft>
       </el-col>
       <el-col :span="12">
-        2222
+        <OnlineIDE></OnlineIDE>
       </el-col>
       <el-col :span="6">
-        3333
+        <HomeRight @switchLoading="switchLoading"></HomeRight>
       </el-col>
     </el-row>
   </div>
@@ -16,6 +16,8 @@
 
 <script>
 import HomeLeft from './HomeLeft.vue'
+import HomeRight from './HomeRight.vue'
+import OnlineIDE from './OnlineIDE.vue'
 
 export default {
   name: 'Home',
@@ -30,7 +32,9 @@ export default {
     }
   },
   components: {
-    HomeLeft
+    HomeLeft,
+    HomeRight,
+    OnlineIDE
   }
 }
 </script>

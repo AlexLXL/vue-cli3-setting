@@ -15,3 +15,8 @@ export const addAccountApi = async (params) => {
 export const deployApi = async (params) => {
   return await http.post(Api.deploy, params)
 }
+
+//执行函数
+export  const execFunApi = async (params) => {
+  return await http.post(Api.deploy, params)
+}
