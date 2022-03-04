@@ -57,7 +57,7 @@
         <p class="formItemLabel">Language</p>
       </div>
       <el-form-item label="" prop="language">
-        <el-select v-model="formData.language" placeholder="please choose" size="small">
+        <el-select v-model="formData.language" @change="changeLanguage" placeholder="please choose" size="small">
           <el-option
             v-for="item in formData.languageList"
             :key="item.value"
@@ -234,6 +234,9 @@
           this.$EventBus.$emit('deployAccountSuccess', result.message)
         }
       },
+      changeLanguage() {
+        this.$EventBus.$emit('changeHomeOnlineIDELanguage', this.formData.language)
+      }
     },
     mounted() {
       this.init()
