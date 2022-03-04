@@ -3,8 +3,11 @@ import App from './App.vue'
 import router from './router'
 import store from './store'
 import eventHelper from "./utils/eventHelper";
+import MonacoInstall from './plugins/MonacoInstall'
 
 Vue.prototype.$EventBus = eventHelper
+
+Vue.use(MonacoInstall)
 
 new Vue({
   router,

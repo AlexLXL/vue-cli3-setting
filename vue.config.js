@@ -1,3 +1,4 @@
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin')
 const path = require('path');
 
 function resolve(dir) {
@@ -17,6 +18,9 @@ module.exports = {
     externals: {
       vue: "Vue",
       "element-ui": "ELEMENT",
-    }
+    },
+    plugins: [
+      new MonacoWebpackPlugin()
+    ]
   }
 };

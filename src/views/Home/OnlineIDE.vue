@@ -1,57 +1,36 @@
 <template>
   <div class="onlineIDE">
-    <MonacoEditor
-      width="100%"
-      height="100%"
-      class="vs"
-      style="text-align: left;background-color: #fff"
-      language="ruby"
-      :code="code"
-      :editorOptions="options"
-      @mounted="onMounted"
-      @codeChange="onCodeChange"
+    <monaco
+      :codes="content"
+      :readOnly="false"
+      @codeChange="codeChange"
+      @codeMounted="codeMounted"
     >
-    </MonacoEditor>
+    </monaco>
   </div>
 </template>
 
 <script>
-  import MonacoEditor from 'vue-monaco-editor'
-
   export default {
-    name: 'OnlineIDE',
+    name: 'OnlineIDE2',
     data: function () {
       return {
-        code: '',
-        editor: null,
-        options: {
-          theme: "vs",
-          selectOnLineNumbers: true,
-          roundedSelection: false,
-          readOnly: false,
-          automaticLayout: true,
-          glyphMargin: true,
-          showFoldingControls: "always",
-          formatOnPaste: true,
-          formatOnType: true,
-          folding: true,
-        }
+        monacoEditor: '',
+        content: ''
       }
     },
     methods: {
-      onMounted(editor) {
-        this.editor = editor;
+      codeMounted(editor) {
+        this.monacoEditor = editor
       },
-      onCodeChange(editor) {
-        console.log(editor)
-      },
+      codeChange(editor) {
+        this.$EventBus.$emit('getHomeOnlineIDEValue', editor.getValue())
+      }
     },
     mounted() {
 
     },
-    components: {
-      MonacoEditor
-    }
+    components: {}
   }
 </script>
 

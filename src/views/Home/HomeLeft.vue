@@ -141,6 +141,7 @@
           remarks: '',
           deployResult: '',
           deployResultVisible: false,
+          deployCode: ''
         },
         formRule: {},
         formRuleDict: {
@@ -170,6 +171,14 @@
       }
     },
     methods: {
+      init() {
+        this.initEventHelper()
+      },
+      initEventHelper() {
+        this.$EventBus.$on('getHomeOnlineIDEValue', (str) => {
+          this.formData.deployCode = str
+        })
+      },
       verifyForm(type) {
         let exec = {
           build: this.addAccount,
@@ -178,9 +187,19 @@
         this.formRule = this.formRuleDict[type]
         this.$nextTick(() => {
           this.$refs.ruleForm.validate((valid) => {
-            if (valid) exec[type]()
+            switch (type) {
+              case 'build':
+                if (valid) exec[type]()
+                break;
+              case 'deploy':
+                if (valid && this.verifyCode) exec[type]()
+                break;
+            }
           })
         })
+      },
+      verifyCode() {
+        return !!this.formData.deployCode
       },
       async addAccount() {
         this.$emit('switchLoading', true)
@@ -200,7 +219,7 @@
           Ha: this.formData.hashAlgorithm,
           Sa: this.formData.accountAlgorithm,
           action: 'deploy',
-          cc: 'function aa(name) {\\nreturn `my name is: ${name}`\\n}\\nfunction bb(age) {\\nreturn `my age is: ${age}`\\n}',
+          cc: this.formData.deployCode,
           cd: this.formData.remarks,
           cl: this.formData.language,
           mode: "Contract",
@@ -213,10 +232,10 @@
           this.formData.deployResultVisible = true
           this.$EventBus.$emit('deployAccountSuccess', result.message)
         }
-      }
+      },
     },
     mounted() {
-
+      this.init()
     }
   }
 </script>
