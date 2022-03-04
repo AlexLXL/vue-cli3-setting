@@ -24,13 +24,14 @@
       <div class="labelLayout">
         <p class="formItemLabel">Call Function</p>
       </div>
-      <el-form-item label="" prop="language">
-        <el-select v-model="formData.execName" placeholder="please enter the call function" size="small">
+      <el-form-item label="" prop="execName">
+        <el-select v-model="formData.execName" placeholder="please enter the call function" size="small" clearable
+                   allow-create filterable>
           <el-option
-            v-for="item in formData.execList"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value">
+            v-for="(value, key) in formData.execList"
+            :key="key"
+            :label="key"
+            :value="key">
           </el-option>
         </el-select>
       </el-form-item>
@@ -38,13 +39,23 @@
       <div class="labelLayout">
         <p class="formItemLabel">Parameter</p>
       </div>
-      <el-form-item label="" prop="parameter">
-        <el-input
-          type="textarea"
-          :rows="4"
-          v-model="formData.parameter">
-        </el-input>
-      </el-form-item>
+      <div v-if="formData.execList[formData.execName]">
+        <el-form-item label="" v-for="(param) in formData.execList[formData.execName].params" :key="param.name">
+          <el-input v-model="param.value">
+            <template slot="prepend">{{param.name}}</template>
+          </el-input>
+        </el-form-item>
+      </div>
+      <div v-else>
+        <el-form-item label="" prop="parameter">
+          <el-input
+            type="textarea"
+            :rows="3"
+            placeholder="please input parameter"
+            v-model="formData.parameter">
+          </el-input>
+        </el-form-item>
+      </div>
     </el-form>
 
     <el-button plain class="callBtn" @click="verifyForm">CALL</el-button>
@@ -60,7 +71,8 @@
 </template>
 
 <script>
-  import {execFunApi} from '@/services/homeService'
+  import {execFnApi} from '@/services/homeService'
+  import {getJsCodeFn} from '@/utils/genertorAST'
 
   export default {
     name: 'HomeLeft',
@@ -70,7 +82,7 @@
           shardName: '',
           contractId: '',
           execName: '',
-          execList: [],
+          execList: {},
           parameter: '',
           callResult: '',
           callResultVisible: false,
@@ -84,9 +96,6 @@
           ],
           execName: [
             {required: true, message: 'please choose Call Function', trigger: 'change'}
-          ],
-          parameter: [
-            {required: true, message: 'Please fill in the parameter', trigger: 'blur'}
           ]
         }
       }
@@ -97,9 +106,20 @@
       },
       initEventHelper() {
         this.$EventBus.$on('deployAccountSuccess', (data) => {
-          let {shardName, hash: contractId} = JSON.parse(data)
+          let deployResult = JSON.parse(data)
+          let {shardName, hash: contractId} = deployResult
           Object.assign(this.formData, {shardName, contractId})
+          this.getCodeFn(deployResult)
         })
+      },
+      getCodeFn(deployResult) {
+        let execs = {
+          js: this.getJSCodeFn
+        }
+        execs[deployResult.languages](deployResult.contract)
+      },
+      getJSCodeFn(code) {
+        this.formData.execList = getJsCodeFn(code)
       },
       verifyForm() {
         this.$refs.ruleForm.validate((valid) => {
@@ -110,13 +130,27 @@
       },
       async execFunction() {
         this.$emit('switchLoading', true)
-        let result = await execFunApi({
-          Sa: this.formData.accountAlgorithm,
-          action: 'createAcc',
-          mode: 'Algorithms'
+        let fp = ''
+        if (Reflect.get(this.formData.execList, this.formData.execName)) {
+          fp = this.formData.execList[this.formData.execName].params.reduce((total, item) => {
+            total.push(item.value)
+            return total
+          }, [])
+          fp = JSON.stringify(fp)
+        } else {
+          fp = this.formData.parameter
+        }
+        let result = await execFnApi({
+          S: this.formData.shardName,
+          cf: this.formData.execName,
+          id: this.formData.contractId,
+          fp: fp,
+          action: 'call',
+          mode: 'Contract'
         })
         this.$emit('switchLoading', false)
-        console.log(JSON.parse(result.message))
+        this.formData.callResult = result.message
+        this.formData.callResultVisible = true
       },
     },
     mounted() {

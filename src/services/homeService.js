@@ -4,6 +4,7 @@ import {oraclesURL} from '@/services/serviceHelper'
 const Api = {
   addAccount: oraclesURL,
   deploy: oraclesURL,
+  execFn: oraclesURL,
 }
 
 //新增账号
@@ -17,6 +18,6 @@ export const deployApi = async (params) => {
 }
 
 //执行函数
-export  const execFunApi = async (params) => {
-  return await http.post(Api.deploy, params)
+export  const execFnApi = async (params) => {
+  return await http.post(Api.execFn, params)
 }

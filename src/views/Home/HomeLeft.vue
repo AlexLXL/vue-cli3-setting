@@ -192,7 +192,8 @@
                 if (valid) exec[type]()
                 break;
               case 'deploy':
-                if (valid && this.verifyCode) exec[type]()
+                if (valid && this.verifyCode()) exec[type]()
+                else this.$message.error('please input `Code`')
                 break;
             }
           })
