@@ -12,47 +12,48 @@
     name: 'MonacoEditor',
     data: function () {
       return {
-        monacoEditor: '',
-        codeChangeEmitter: ''
+        monacoEditor: '',       // monaco实例
+        codeChangeEmitter: ''   // monaco修改内容回调
       }
     },
     props: {
-      // 编辑器中呈现的内容
       codes: {
         type: String,
         default: function () {
           return ''
         }
-      },
+      }, // manaco内容
       readOnly: {
         type: Boolean,
         default: function () {
           return false
         }
-      },
-      // 主要配置
+      }, // manaco只读
       editorOptions: {
         type: Object,
         default: function () {
           return {
             selectOnLineNumbers: true,
             roundedSelection: false,
-            readOnly: this.readOnly, // 只读
-            cursorStyle: 'line', // 光标样式
-            automaticLayout: false, // 自动布局
-            glyphMargin: true, // 字形边缘
+            readOnly: this.readOnly,  // 只读
+            cursorStyle: 'line',      // 光标样式
+            automaticLayout: false,   // 自动布局
+            glyphMargin: true,        // 字形边缘
             useTabStops: false,
-            fontSize: 28, // 字体大小
-            autoIndent: false // 自动布局
+            fontSize: 28,             // 字体大小
+            autoIndent: false         // 自动布局
           }
         }
-      }
+      } // manaco配置
     },
     methods: {
       init() {
         this.createMonaco()
         this.initEventHelper()
       },
+      /**
+       * 绑定组件事件
+       */
       initEventHelper() {
         this.$EventBus.$on('changeHomeOnlineIDELanguage', (language) => {
           let languageMap = {
@@ -63,20 +64,63 @@
           monaco.editor.setModelLanguage(this.monacoEditor.getModel(), languageMap[language]);
         })
       },
+      /**
+       * 创建Monaco实例
+       */
       createMonaco() {
         this.monacoEditor = monaco.editor.create(this.$refs.container, {
-          value: this.codes, // 见props
+          value: this.codes, // props
           language: 'javascript',
-          theme: 'vs-dark', // 编辑器主题：vs, hc-black, or vs-dark，更多选择详见官网
-          editorOptions: this.editorOptions // 同codes
+          theme: 'vs-dark', // 主题: vs, hc-black, vs-dark
+          editorOptions: this.editorOptions // props
         })
-        this.monacoEditor.onDidChangeModelContent(() => {
-          this.codeChangeHandler(this.monacoEditor)
-        })
+        this.createMonacoEvent()
         this.createPythonTip()
         this.createRubyTip()
         this.$emit('codeMounted', this.monacoEditor);
       },
+      /**
+       * 绑定Monaco实例事件
+       */
+      createMonacoEvent() {
+        this.monacoEditor.onDidChangeModelContent(() => {
+          this.codeChangeHandler(this.monacoEditor)
+        })
+
+        this.monacoEditor.onMouseDown(e => {
+          console.log(e)
+          // 限制点击的位置
+          if (e.target.detail
+            && e.target.detail.offsetX
+            && e.target.detail.offsetX >= 0
+            && e.target.detail.offsetX <= 25
+          ) {
+            let line = e.target.position.lineNumber
+            if (this.monacoEditor.getModel().getLineContent(line).trim() === '') {
+              return
+            }
+            // 添加断点/删除断点
+            if (!this.hasBreakPoint(line)) {
+              this.addBreakPoint(line)
+            } else {
+              this.removeBreakPoint(line)
+            }
+            //如果存在上个位置，将鼠标移到上个位置，否则使editor失去焦点
+            if (this.lastPosition) {
+              this.monacoEditor.setPosition(this.lastPosition)
+            } else {
+              document.activeElement.blur()
+            }
+          }
+          //更新lastPosition为当前鼠标的位置（只有点击编辑器里面的内容的时候）
+          if (e.target.type === 6 || e.target.type === 7) {
+            this.lastPosition = this.monacoEditor.getPosition()
+          }
+        })
+      },
+      /**
+       * 创建python语法提示
+       */
       createPythonTip() {
         let self = this
         monaco.languages.registerCompletionItemProvider('python', {
@@ -255,6 +299,9 @@
           }
         });
       },
+      /**
+       * 创建Ruby语法提示
+       */
       createRubyTip() {
         let self = this
         monaco.languages.registerCompletionItemProvider('ruby', {
@@ -338,6 +385,9 @@
           }
         });
       },
+      /**
+       * 文本获取(token)
+       */
       getTokens(code) {
         const identifierPattern = "([a-zA-Z_]\\w*)";	// 正则表达式定义 注意转义\\w
         let identifier = new RegExp(identifierPattern, "g");	// 注意加入参数"g"表示多次查找
@@ -346,8 +396,11 @@
         while ((array1 = identifier.exec(code)) !== null) {
           tokens.push(array1[0]);
         }
-        return Array.from(new Set(tokens));			// 去重
+        return Array.from(new Set(tokens));	// 去重
       },
+      /**
+       * 文本修改回调
+       */
       codeChangeHandler(editor) {
         if (this.codeChangeEmitter) {
           this.codeChangeEmitter(editor);
@@ -360,10 +413,62 @@
           this.codeChangeEmitter(editor);
         }
       },
+      /**
+       * 销毁Monaco实例
+       */
       destroyMonaco() {
         if (typeof this.monacoEditor !== 'undefined') {
           this.monacoEditor.dispose();
         }
+      },
+      /**
+       * 销毁Monaco实例
+       */
+      getMonacoLanguage() {
+        return this.monacoEditor.getModel().getLanguageIdentifier().language
+      },
+      /**
+       * 断点: 添加断点
+       */
+      async addBreakPoint (line) {
+        let model = this.monacoEditor.getModel()
+        if (!model) return
+        let value = {range: new monaco.Range(line, 1, line, 1), options: { isWholeLine: true, linesDecorationsClassName: 'breakpoints' }}
+        model.deltaDecorations([], [value])
+      },
+      /**
+       *  断点: 删除断点（如果指定了line，删除指定行的断点，否则删除当前model里面的所有断点）
+       */
+      async removeBreakPoint (line) {
+        let model = this.monacoEditor.getModel()
+        if (!model) return
+        let decorations
+        let ids = []
+        if (line !== undefined) {
+          decorations = this.monacoEditor.getLineDecorations(line)
+        } else {
+          decorations = this.monacoEditor.getAllDecorations()
+        }
+        for (let decoration of decorations) {
+          if (decoration.options.linesDecorationsClassName === 'breakpoints') {
+            ids.push(decoration.id)
+          }
+        }
+        if (ids && ids.length) {
+          model.deltaDecorations(ids, [])
+        }
+      },
+      /**
+       * 断点: 判断是否有断点
+       */
+      hasBreakPoint (line) {
+        let decorations = this.monacoEditor.getLineDecorations(line)
+        for (let decoration of decorations) {
+          if (decoration.options.linesDecorationsClassName === 'breakpoints') {
+            return true
+          }
+        }
+        return false
       }
     },
     mounted() {
@@ -380,6 +485,15 @@
     .monaco-editor {
       width: 100%;
       height: 100%;
+    }
+
+    /deep/ .breakpoints{
+      background-color: #c75450;
+      width: 10px !important;
+      height: 10px !important;
+      left: 15% !important;
+      top: 3px;
+      border-radius: 5px;
     }
   }
 </style>
