@@ -55,7 +55,12 @@
       },
       initEventHelper() {
         this.$EventBus.$on('changeHomeOnlineIDELanguage', (language) => {
-          monaco.editor.setModelLanguage(this.monacoEditor.getModel(), language);
+          let languageMap = {
+            js: 'javascript',
+            python: 'python',
+            ruby: 'ruby'
+          }
+          monaco.editor.setModelLanguage(this.monacoEditor.getModel(), languageMap[language]);
         })
       },
       createMonaco() {
@@ -73,22 +78,9 @@
         this.$emit('codeMounted', this.monacoEditor);
       },
       createPythonTip() {
+        let self = this
         monaco.languages.registerCompletionItemProvider('python', {
           provideCompletionItems: function (model, position) {
-            // 获取当前行数
-            const line = position.lineNumber;
-            // 获取当前列数
-            const column = position.column;
-            // 获取当前输入行的所有内容
-            const content = model.getLineContent(line)
-            // 通过下标来获取当前光标后一个内容，即为刚输入的内容
-            const sym = content[column - 2];
-            model.getValueInRange({
-              startLineNumber: 1,
-              startColumn: 1,
-              endLineNumber: position.lineNumber,
-              endColumn: position.column
-            });
             let word = model.getWordUntilPosition(position);
             let range = {
               startLineNumber: position.lineNumber,
@@ -96,185 +88,177 @@
               startColumn: word.startColumn,
               endColumn: word.endColumn
             };
-            //---------------------------------------------------
-            //上面的代码仅仅是为了获取sym，即提示符
-            //---------------------------------------------------
+
             let suggestions = [];
-            if (sym === "$") {
-              //...
-              //拦截到用户输入$，开始设置提示内容，同else中代码一致，自行拓展
-            } else {
-              //直接提示，以下为当前语言关键词提示
-              let keyWords = [
-                // This section is the result of running
-                // `for k in keyword.kwlist: print('  "' + k + '",')` in a Python REPL,
-                // though note that the output from Python 3 is not a strict superset of the
-                // output from Python 2.
-                'False', // promoted to keyword.kwlist in Python 3
-                'None', // promoted to keyword.kwlist in Python 3
-                'True', // promoted to keyword.kwlist in Python 3
-                'and',
-                'as',
-                'assert',
-                'async', // new in Python 3
-                'await', // new in Python 3
-                'break',
-                'class',
-                'continue',
-                'def',
-                'del',
-                'elif',
-                'else',
-                'except',
-                'exec', // Python 2, but not 3.
-                'finally',
-                'for',
-                'from',
-                'global',
-                'if',
-                'import',
-                'in',
-                'is',
-                'lambda',
-                'nonlocal', // new in Python 3
-                'not',
-                'or',
-                'pass',
-                'print', // Python 2, but not 3.
-                'raise',
-                'return',
-                'try',
-                'while',
-                'with',
-                'yield',
+            //关键字补全
+            let keyWords = [
+              // This section is the result of running
+              // `for k in keyword.kwlist: print('  "' + k + '",')` in a Python REPL,
+              // though note that the output from Python 3 is not a strict superset of the
+              // output from Python 2.
+              'False', // promoted to keyword.kwlist in Python 3
+              'None', // promoted to keyword.kwlist in Python 3
+              'True', // promoted to keyword.kwlist in Python 3
+              'and',
+              'as',
+              'assert',
+              'async', // new in Python 3
+              'await', // new in Python 3
+              'break',
+              'class',
+              'continue',
+              'def',
+              'del',
+              'elif',
+              'else',
+              'except',
+              'exec', // Python 2, but not 3.
+              'finally',
+              'for',
+              'from',
+              'global',
+              'if',
+              'import',
+              'in',
+              'is',
+              'lambda',
+              'nonlocal', // new in Python 3
+              'not',
+              'or',
+              'pass',
+              'print', // Python 2, but not 3.
+              'raise',
+              'return',
+              'try',
+              'while',
+              'with',
+              'yield',
 
-                'int',
-                'float',
-                'long',
-                'complex',
-                'hex',
+              'int',
+              'float',
+              'long',
+              'complex',
+              'hex',
 
-                'abs',
-                'all',
-                'any',
-                'apply',
-                'basestring',
-                'bin',
-                'bool',
-                'buffer',
-                'bytearray',
-                'callable',
-                'chr',
-                'classmethod',
-                'cmp',
-                'coerce',
-                'compile',
-                'complex',
-                'delattr',
-                'dict',
-                'dir',
-                'divmod',
-                'enumerate',
-                'eval',
-                'execfile',
-                'file',
-                'filter',
-                'format',
-                'frozenset',
-                'getattr',
-                'globals',
-                'hasattr',
-                'hash',
-                'help',
-                'id',
-                'input',
-                'intern',
-                'isinstance',
-                'issubclass',
-                'iter',
-                'len',
-                'locals',
-                'list',
-                'map',
-                'max',
-                'memoryview',
-                'min',
-                'next',
-                'object',
-                'oct',
-                'open',
-                'ord',
-                'pow',
-                'print',
-                'property',
-                'reversed',
-                'range',
-                'raw_input',
-                'reduce',
-                'reload',
-                'repr',
-                'reversed',
-                'round',
-                'self',
-                'set',
-                'setattr',
-                'slice',
-                'sorted',
-                'staticmethod',
-                'str',
-                'sum',
-                'super',
-                'tuple',
-                'type',
-                'unichr',
-                'unicode',
-                'vars',
-                'xrange',
-                'zip',
+              'abs',
+              'all',
+              'any',
+              'apply',
+              'basestring',
+              'bin',
+              'bool',
+              'buffer',
+              'bytearray',
+              'callable',
+              'chr',
+              'classmethod',
+              'cmp',
+              'coerce',
+              'compile',
+              'complex',
+              'delattr',
+              'dict',
+              'dir',
+              'divmod',
+              'enumerate',
+              'eval',
+              'execfile',
+              'file',
+              'filter',
+              'format',
+              'frozenset',
+              'getattr',
+              'globals',
+              'hasattr',
+              'hash',
+              'help',
+              'id',
+              'input',
+              'intern',
+              'isinstance',
+              'issubclass',
+              'iter',
+              'len',
+              'locals',
+              'list',
+              'map',
+              'max',
+              'memoryview',
+              'min',
+              'next',
+              'object',
+              'oct',
+              'open',
+              'ord',
+              'pow',
+              'print',
+              'property',
+              'reversed',
+              'range',
+              'raw_input',
+              'reduce',
+              'reload',
+              'repr',
+              'reversed',
+              'round',
+              'self',
+              'set',
+              'setattr',
+              'slice',
+              'sorted',
+              'staticmethod',
+              'str',
+              'sum',
+              'super',
+              'tuple',
+              'type',
+              'unichr',
+              'unicode',
+              'vars',
+              'xrange',
+              'zip',
 
-                '__dict__',
-                '__methods__',
-                '__members__',
-                '__class__',
-                '__bases__',
-                '__name__',
-                '__mro__',
-                '__subclasses__',
-                '__init__',
-                '__import__'
-              ]
-              for (let i in keyWords) {
+              '__dict__',
+              '__methods__',
+              '__members__',
+              '__class__',
+              '__bases__',
+              '__name__',
+              '__mro__',
+              '__subclasses__',
+              '__init__',
+              '__import__'
+            ]
+            for (let i in keyWords) {
+              suggestions.push({
+                label: keyWords[i], // 显示的提示内容
+                kind: monaco.languages.CompletionItemKind['Function'], // 用来显示提示内容后的不同的图标
+                insertText: keyWords[i], // 选择后粘贴到编辑器中的文字
+                detail: '', // 提示内容后的说明
+                range: range
+              });
+            }
+            // 基于已输入词（Token）补全
+            let tokens = self.getTokens(self.monacoEditor.getValue());
+            for (const item of tokens) {
+              if (item != word.word) {
                 suggestions.push({
-                  label: keyWords[i], // 显示的提示内容
-                  kind: monaco.languages.CompletionItemKind['Function'], // 用来显示提示内容后的不同的图标
-                  insertText: keyWords[i], // 选择后粘贴到编辑器中的文字
-                  detail: '', // 提示内容后的说明
+                  label: item,
+                  kind: monaco.languages.CompletionItemKind.Text,	// Text 没有特殊意义 这里表示基于文本&单词的补全
+                  documentation: "",
+                  insertText: item,
                   range: range
                 });
               }
             }
-            return { suggestions };
-          },
-          triggerCharacters: ["$", ""]
+            return {suggestions};
+          }
         });
       },
       createRubyTip() {
+        let self = this
         monaco.languages.registerCompletionItemProvider('ruby', {
           provideCompletionItems: function (model, position) {
-            // 获取当前行数
-            const line = position.lineNumber;
-            // 获取当前列数
-            const column = position.column;
-            // 获取当前输入行的所有内容
-            const content = model.getLineContent(line)
-            // 通过下标来获取当前光标后一个内容，即为刚输入的内容
-            const sym = content[column - 2];
-            model.getValueInRange({
-              startLineNumber: 1,
-              startColumn: 1,
-              endLineNumber: position.lineNumber,
-              endColumn: position.column
-            });
             let word = model.getWordUntilPosition(position);
             let range = {
               startLineNumber: position.lineNumber,
@@ -282,72 +266,87 @@
               startColumn: word.startColumn,
               endColumn: word.endColumn
             };
-            //---------------------------------------------------
-            //上面的代码仅仅是为了获取sym，即提示符
-            //---------------------------------------------------
+
             let suggestions = [];
-            if (sym === "$") {
-              //...
-              //拦截到用户输入$，开始设置提示内容，同else中代码一致，自行拓展
-            } else {
-              //直接提示，以下为当前语言关键词提示
-              let keyWords = [
-                '__LINE__',
-                '__ENCODING__',
-                '__FILE__',
-                'BEGIN',
-                'END',
-                'alias',
-                'and',
-                'begin',
-                'break',
-                'case',
-                'class',
-                'def',
-                'defined?',
-                'do',
-                'else',
-                'elsif',
-                'end',
-                'ensure',
-                'for',
-                'false',
-                'if',
-                'in',
-                'module',
-                'next',
-                'nil',
-                'not',
-                'or',
-                'redo',
-                'rescue',
-                'retry',
-                'return',
-                'self',
-                'super',
-                'then',
-                'true',
-                'undef',
-                'unless',
-                'until',
-                'when',
-                'while',
-                'yield'
-              ]
-              for (let i in keyWords) {
+            //关键字补全
+            let keyWords = [
+              '__LINE__',
+              '__ENCODING__',
+              '__FILE__',
+              'BEGIN',
+              'END',
+              'alias',
+              'and',
+              'begin',
+              'break',
+              'case',
+              'class',
+              'def',
+              'defined?',
+              'do',
+              'else',
+              'elsif',
+              'end',
+              'ensure',
+              'for',
+              'false',
+              'if',
+              'in',
+              'module',
+              'next',
+              'nil',
+              'not',
+              'or',
+              'redo',
+              'rescue',
+              'retry',
+              'return',
+              'self',
+              'super',
+              'then',
+              'true',
+              'undef',
+              'unless',
+              'until',
+              'when',
+              'while',
+              'yield'
+            ]
+            for (let i in keyWords) {
+              suggestions.push({
+                label: keyWords[i], // 显示的提示内容
+                kind: monaco.languages.CompletionItemKind['Function'], // 用来显示提示内容后的不同的图标
+                insertText: keyWords[i], // 选择后粘贴到编辑器中的文字
+                detail: '', // 提示内容后的说明
+                range: range
+              });
+            }
+            // 基于已输入词（Token）补全
+            let tokens = self.getTokens(self.monacoEditor.getValue());
+            for (const item of tokens) {
+              if (item != word.word) {
                 suggestions.push({
-                  label: keyWords[i], // 显示的提示内容
-                  kind: monaco.languages.CompletionItemKind['Function'], // 用来显示提示内容后的不同的图标
-                  insertText: keyWords[i], // 选择后粘贴到编辑器中的文字
-                  detail: '', // 提示内容后的说明
+                  label: item,
+                  kind: monaco.languages.CompletionItemKind.Text,	// Text 没有特殊意义 这里表示基于文本&单词的补全
+                  documentation: "",
+                  insertText: item,
                   range: range
                 });
               }
             }
-            return { suggestions }
-          },
-          triggerCharacters: ["$", ""]
+            return {suggestions};
+          }
         });
+      },
+      getTokens(code) {
+        const identifierPattern = "([a-zA-Z_]\\w*)";	// 正则表达式定义 注意转义\\w
+        let identifier = new RegExp(identifierPattern, "g");	// 注意加入参数"g"表示多次查找
+        let tokens = [];
+        let array1;
+        while ((array1 = identifier.exec(code)) !== null) {
+          tokens.push(array1[0]);
+        }
+        return Array.from(new Set(tokens));			// 去重
       },
       codeChangeHandler(editor) {
         if (this.codeChangeEmitter) {

@@ -72,7 +72,7 @@
 
 <script>
   import {execFnApi} from '@/services/homeService'
-  import {getJsCodeFn} from '@/utils/genertorAST'
+  import {getJsCodeFn, getPythonCodeFn} from '@/utils/genertorAST'
 
   export default {
     name: 'HomeLeft',
@@ -114,12 +114,16 @@
       },
       getCodeFn(deployResult) {
         let execs = {
-          js: this.getJSCodeFn
+          js: this.getJSCodeFn,
+          python: this.getPythonCodeFn
         }
         execs[deployResult.languages](deployResult.contract)
       },
       getJSCodeFn(code) {
         this.formData.execList = getJsCodeFn(code)
+      },
+      getPythonCodeFn(code) {
+        this.formData.execList = getPythonCodeFn(code)
       },
       verifyForm() {
         this.$refs.ruleForm.validate((valid) => {

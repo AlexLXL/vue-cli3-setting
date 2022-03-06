@@ -42,3 +42,17 @@ export function getJsCodeFn(code){
   })
   return result
 }
+
+export function getPythonCodeFn(code) {
+  let result = {}
+  const fnRegExp = /def.+?[:]/g
+  let fnList = code.match(fnRegExp)
+  fnList.forEach((str) => {
+    let name = str.match(/[ ].+?[(]/g)[0].replace(/[ ]/g, '').slice(0,-1)
+    let params = str.match(/[(].+?[)]/g)[0].replace(/[ ]/g, '').slice(1,-1).split(',').map((param) => {
+      return {name: param, value: ''}
+    })
+    result[name] = {params}
+  })
+  return result
+}
