@@ -438,7 +438,7 @@
         }
       },
       /**
-       * 销毁Monaco实例
+       * 获取当前语言
        */
       getMonacoLanguage() {
         return this.monacoEditor.getModel().getLanguageIdentifier().language
