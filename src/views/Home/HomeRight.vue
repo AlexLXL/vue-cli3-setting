@@ -72,7 +72,7 @@
 
 <script>
   import {execFnApi} from '@/services/homeService'
-  import {getJsCodeFn, getPythonCodeFn} from '@/utils/genertorAST'
+  import {getJsCodeFn, getPythonCodeFn, getRubyCodeFn} from '@/utils/genertorAST'
 
   export default {
     name: 'HomeLeft',
@@ -115,7 +115,8 @@
       getCodeFn(deployResult) {
         let execs = {
           js: this.getJSCodeFn,
-          python: this.getPythonCodeFn
+          python: this.getPythonCodeFn,
+          ruby: this.getRubyCodeFn
         }
         execs[deployResult.languages](deployResult.contract)
       },
@@ -124,6 +125,9 @@
       },
       getPythonCodeFn(code) {
         this.formData.execList = getPythonCodeFn(code)
+      },
+      getRubyCodeFn(code) {
+        this.formData.execList = getRubyCodeFn(code)
       },
       verifyForm() {
         this.$refs.ruleForm.validate((valid) => {
@@ -137,10 +141,11 @@
         let fp = ''
         if (Reflect.get(this.formData.execList, this.formData.execName)) {
           fp = this.formData.execList[this.formData.execName].params.reduce((total, item) => {
-            total.push(item.value)
+            total += `${item.value},`
             return total
-          }, [])
-          fp = JSON.stringify(fp)
+          }, '[')
+          fp = fp.slice(0, -1)
+          fp += ']'
         } else {
           fp = this.formData.parameter
         }
