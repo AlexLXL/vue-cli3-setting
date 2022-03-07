@@ -85,6 +85,22 @@
       createMonacoEvent() {
         this.monacoEditor.onDidChangeModelContent(() => {
           this.codeChangeHandler(this.monacoEditor)
+
+          this.$nextTick(() => {
+            //获取当前的鼠标位置
+            let pos = this.monacoEditor.getPosition()
+            if (pos) {
+              let line = pos.lineNumber //获取当前的行
+              if (this.monacoEditor.getModel().getLineContent(line).trim() === '') { // 空行
+                this.removeBreakPoint(line)
+              } else {
+                if (this.hasBreakPoint(line)) { //如果当前行存在断点
+                  this.removeBreakPoint(line)
+                  this.addBreakPoint(line)
+                }
+              }
+            }
+          })
         })
 
         this.monacoEditor.onMouseDown(e => {
@@ -469,6 +485,18 @@
           }
         }
         return false
+      },
+      /**
+       * 断点: 获取断点
+       */
+      getBreakPoint() {
+        let breakpoints = this.monacoEditor
+          .getModel()
+          .getAllDecorations()
+          .filter(it => it.options.linesDecorationsClassName === 'breakpoints')
+          .map(it => it.range.startLineNumber)
+          .join(',')
+          console.log(breakpoints) // 3,4
       }
     },
     mounted() {
