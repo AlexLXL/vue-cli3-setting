@@ -5,9 +5,11 @@
 </template>
 
 <script>
-  // import * as monaco from 'monaco-editor'
+  import * as monaco from 'monaco-editor'
   import {debounce} from '@/utils/util'
-  import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
+  import {getPythonCodeFn, getRubyCodeFn} from '@/utils/genertorAST'
+  // import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
+
 
   export default {
     name: 'MonacoEditor',
@@ -315,6 +317,53 @@
             return {suggestions};
           }
         });
+
+        monaco.languages.registerSignatureHelpProvider('python', {
+          signatureHelpTriggerCharacters: ['('],
+          provideSignatureHelp: function (model, position) {
+            let textUntilPosition = model.getValueInRange({
+              startLineNumber: position.lineNumber,
+              startColumn: 1,
+              endLineNumber: position.lineNumber,
+              endColumn: position.column
+            });
+
+            let currFnName = textUntilPosition.match(/.+?[(]/g)[0].replace(/[ ]/g, '').slice(0,-1)
+            let fnList = getPythonCodeFn(self.getMonacoValue())
+
+            let label = ''
+            try {
+              let result = fnList[currFnName].params.reduce((count, item) => {
+                count.push(item.name)
+                return count
+              }, [])
+              label = `${currFnName} ( ${result.join(',')} )`
+            }catch (e) {
+              label = ''
+            }
+
+            let signatures
+            if (label) {
+              signatures = [{
+                  label: label,
+                  documentation: "",
+                  parameters: []
+                }]
+            }else {
+              signatures = []
+            }
+
+            return {
+              dispose: () => {},
+              value: {
+                signatures,
+                activeSignature: 0,
+                activeParameter: 0
+              },
+            };
+
+          }
+        });
       },
       /**
        * 创建Ruby语法提示
@@ -401,6 +450,50 @@
             return {suggestions};
           }
         });
+
+        monaco.languages.registerSignatureHelpProvider('ruby', {
+          signatureHelpTriggerCharacters: [
+            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+            '$', '_', '@'
+          ],
+          provideSignatureHelp: function (model, position) {
+            let currFnName = model.getWordUntilPosition(position);
+            let fnList = getRubyCodeFn(self.getMonacoValue())
+            
+            let label = ''
+            try {
+              let result = fnList[currFnName.word].params.reduce((count, item) => {
+                count.push(item.name)
+                return count
+              }, [])
+              label = `${currFnName.word} ( ${result.join(',')} )`
+            }catch (e) {
+              label = ''
+            }
+
+            let signatures
+            if (label) {
+              signatures = [{
+                label: label,
+                documentation: "",
+                parameters: []
+              }]
+            }else {
+              signatures = []
+            }
+
+            return {
+              dispose: () => {},
+              value: {
+                signatures,
+                activeSignature: 0,
+                activeParameter: 0
+              },
+            };
+
+          }
+        });
       },
       /**
        * 文本获取(token)
@@ -447,16 +540,19 @@
       /**
        * 断点: 添加断点
        */
-      async addBreakPoint (line) {
+      async addBreakPoint(line) {
         let model = this.monacoEditor.getModel()
         if (!model) return
-        let value = {range: new monaco.Range(line, 1, line, 1), options: { isWholeLine: true, linesDecorationsClassName: 'breakpoints' }}
+        let value = {
+          range: new monaco.Range(line, 1, line, 1),
+          options: {isWholeLine: true, linesDecorationsClassName: 'breakpoints'}
+        }
         model.deltaDecorations([], [value])
       },
       /**
        *  断点: 删除断点（如果指定了line，删除指定行的断点，否则删除当前model里面的所有断点）
        */
-      async removeBreakPoint (line) {
+      async removeBreakPoint(line) {
         let model = this.monacoEditor.getModel()
         if (!model) return
         let decorations
@@ -478,7 +574,7 @@
       /**
        * 断点: 判断是否有断点
        */
-      hasBreakPoint (line) {
+      hasBreakPoint(line) {
         let decorations = this.monacoEditor.getLineDecorations(line)
         for (let decoration of decorations) {
           if (decoration.options.linesDecorationsClassName === 'breakpoints') {
@@ -497,7 +593,13 @@
           .filter(it => it.options.linesDecorationsClassName === 'breakpoints')
           .map(it => it.range.startLineNumber)
           .join(',')
-          console.log(breakpoints) // 3,4
+        console.log(breakpoints) // 3,4
+      },
+      /**
+       * 获取输入框的值
+       */
+      getMonacoValue() {
+        return this.monacoEditor.getValue()
       }
     },
     mounted() {
@@ -516,7 +618,7 @@
       height: 100%;
     }
 
-    /deep/ .breakpoints{
+    /deep/ .breakpoints {
       background-color: #c75450;
       width: 10px !important;
       height: 10px !important;

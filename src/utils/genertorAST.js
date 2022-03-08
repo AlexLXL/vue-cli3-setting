@@ -45,6 +45,7 @@ export function getJsCodeFn(code){
 
 /**
  * 获取python的函数和参数
+ * 附: 没有找到python转ast的插件
  */
 export function getPythonCodeFn(code) {
   let result = {}
@@ -62,6 +63,7 @@ export function getPythonCodeFn(code) {
 
 /**
  * 获取Ruby的函数和参数
+ * 附: 没有找到Ruby转ast的插件
  */
 export function getRubyCodeFn(code) {
   let result = {}
