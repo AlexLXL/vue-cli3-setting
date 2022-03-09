@@ -26,7 +26,7 @@
     data: function () {
       return {
         monacoEditor: '',       // monaco实例
-        codeChangeEmitter: ''   // monaco修改内容回调
+        codeChangeEmitter: '',  // monaco修改内容回调
       }
     },
     props: {
@@ -71,7 +71,7 @@
     },
     methods: {
       init() {
-        this.createMonacoPython()
+        this.createMonacoJS()
         this.initEventHelper()
       },
       /**
@@ -116,12 +116,17 @@
           mimetypes: ["application/json"],
         });
 
+        let model = monaco.editor.getModel(monaco.Uri.parse("inmemory://model.json"))
+        if (!model) {
+            model = monaco.editor.createModel(
+              this.codes,
+              "python",
+              monaco.Uri.parse("inmemory://model.json")
+            )
+        }
+
         this.monacoEditor = monaco.editor.create(this.$refs.container, {
-          model: monaco.editor.createModel(
-            this.codes,
-            "python",
-            monaco.Uri.parse("inmemory://model.json")
-          ),
+          model: model,
           language: 'python',
           glyphMargin: true,
           theme: 'vs-dark',
@@ -130,12 +135,13 @@
           },
           editorOptions: this.editorOptions
         })
-        
-        console.log(`MonacoServices: ${MonacoServices}`)
-        console.log(this.monacoEditor)
 
         // install Monaco language client services
-        MonacoServices.install(this.monacoEditor);
+        try {
+          MonacoServices.get()
+        }catch (e) {
+          MonacoServices.install(this.monacoEditor);
+        }
 
         this.connectPythonLspSocket(this.pythonLspSocket)
 
@@ -167,7 +173,6 @@
         })
 
         this.monacoEditor.onMouseDown(e => {
-          console.log(e)
           // 限制点击的位置
           if (e.target.detail
             && e.target.detail.offsetX
