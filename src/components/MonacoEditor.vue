@@ -7,9 +7,19 @@
 <script>
   import * as monaco from 'monaco-editor'
   import {debounce} from '@/utils/util'
-  import {getPythonCodeFn, getRubyCodeFn} from '@/utils/genertorAST'
-  // import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
+  import { listen } from "vscode-ws-jsonrpc";
+  import {
+    MonacoLanguageClient,
+    CloseAction,
+    ErrorAction,
+    MonacoServices,
+    createConnection,
+  } from "monaco-languageclient";
+  import ReconnectingWebSocket from "reconnecting-websocket"
 
+  // 插件有bug, 误删
+  window.monaco = monaco
+  window.setImmediate = setImmediate
 
   export default {
     name: 'MonacoEditor',
@@ -20,18 +30,21 @@
       }
     },
     props: {
+      // manaco内容
       codes: {
         type: String,
         default: function () {
           return ''
         }
-      }, // manaco内容
+      },
+      // manaco只读
       readOnly: {
         type: Boolean,
         default: function () {
           return false
         }
-      }, // manaco只读
+      },
+      // manaco配置
       editorOptions: {
         type: Object,
         default: function () {
@@ -47,11 +60,18 @@
             autoIndent: false         // 自动布局
           }
         }
-      } // manaco配置
+      },
+      // Language Server Protocol
+      pythonLspSocket: {
+        type: String,
+        default: function () {
+          return 'ws://127.0.0.1:5000/python'
+        }
+      },
     },
     methods: {
       init() {
-        this.createMonaco()
+        this.createMonacoPython()
         this.initEventHelper()
       },
       /**
@@ -59,18 +79,22 @@
        */
       initEventHelper() {
         this.$EventBus.$on('changeHomeOnlineIDELanguage', (language) => {
-          let languageMap = {
-            js: 'javascript',
-            python: 'python',
-            ruby: 'ruby'
+          if (language === 'js') {
+            this.destroyMonaco()
+            this.createMonacoJS()
+          } else if (language === 'python') {
+            this.destroyMonaco()
+            this.createMonacoPython()
+          } else if (language === 'ruby') {
+            console.log('ruby')
           }
-          monaco.editor.setModelLanguage(this.monacoEditor.getModel(), languageMap[language]);
+          // monaco.editor.setModelLanguage(this.monacoEditor.getModel(), languageMap[language]);
         })
       },
       /**
-       * 创建Monaco实例
+       * 创建Monaco实例（js）
        */
-      createMonaco() {
+      createMonacoJS() {
         this.monacoEditor = monaco.editor.create(this.$refs.container, {
           value: this.codes, // props
           language: 'javascript',
@@ -78,8 +102,44 @@
           editorOptions: this.editorOptions // props
         })
         this.createMonacoEvent()
-        this.createPythonTip()
-        this.createRubyTip()
+        this.$emit('codeMounted', this.monacoEditor);
+      },
+      /**
+       * 创建Monaco实例（python）
+       */
+      createMonacoPython() {
+        // register Monaco languages
+        monaco.languages.register({
+          id: "python",
+          extensions: [".python", ".py", ".pyd"],
+          aliases: ["Python", "python"],
+          mimetypes: ["application/json"],
+        });
+
+        this.monacoEditor = monaco.editor.create(this.$refs.container, {
+          model: monaco.editor.createModel(
+            this.codes,
+            "python",
+            monaco.Uri.parse("inmemory://model.json")
+          ),
+          language: 'python',
+          glyphMargin: true,
+          theme: 'vs-dark',
+          lightbulb: {
+            enabled: true,
+          },
+          editorOptions: this.editorOptions
+        })
+        
+        console.log(`MonacoServices: ${MonacoServices}`)
+        console.log(this.monacoEditor)
+
+        // install Monaco language client services
+        MonacoServices.install(this.monacoEditor);
+
+        this.connectPythonLspSocket(this.pythonLspSocket)
+
+        this.createMonacoEvent()
         this.$emit('codeMounted', this.monacoEditor);
       },
       /**
@@ -138,375 +198,53 @@
         })
       },
       /**
-       * 创建python语法提示
+       * 连接python的语法语法提示后台
        */
-      createPythonTip() {
-        let self = this
-        monaco.languages.registerCompletionItemProvider('python', {
-          provideCompletionItems: function (model, position) {
-            let word = model.getWordUntilPosition(position);
-            let range = {
-              startLineNumber: position.lineNumber,
-              endLineNumber: position.lineNumber,
-              startColumn: word.startColumn,
-              endColumn: word.endColumn
-            };
+      connectPythonLspSocket() {
+        const webSocket = this.createWebSocket(this.pythonLspSocket);
 
-            let suggestions = [];
-            //关键字补全
-            let keyWords = [
-              // This section is the result of running
-              // `for k in keyword.kwlist: print('  "' + k + '",')` in a Python REPL,
-              // though note that the output from Python 3 is not a strict superset of the
-              // output from Python 2.
-              'False', // promoted to keyword.kwlist in Python 3
-              'None', // promoted to keyword.kwlist in Python 3
-              'True', // promoted to keyword.kwlist in Python 3
-              'and',
-              'as',
-              'assert',
-              'async', // new in Python 3
-              'await', // new in Python 3
-              'break',
-              'class',
-              'continue',
-              'def',
-              'del',
-              'elif',
-              'else',
-              'except',
-              'exec', // Python 2, but not 3.
-              'finally',
-              'for',
-              'from',
-              'global',
-              'if',
-              'import',
-              'in',
-              'is',
-              'lambda',
-              'nonlocal', // new in Python 3
-              'not',
-              'or',
-              'pass',
-              'print', // Python 2, but not 3.
-              'raise',
-              'return',
-              'try',
-              'while',
-              'with',
-              'yield',
-
-              'int',
-              'float',
-              'long',
-              'complex',
-              'hex',
-
-              'abs',
-              'all',
-              'any',
-              'apply',
-              'basestring',
-              'bin',
-              'bool',
-              'buffer',
-              'bytearray',
-              'callable',
-              'chr',
-              'classmethod',
-              'cmp',
-              'coerce',
-              'compile',
-              'complex',
-              'delattr',
-              'dict',
-              'dir',
-              'divmod',
-              'enumerate',
-              'eval',
-              'execfile',
-              'file',
-              'filter',
-              'format',
-              'frozenset',
-              'getattr',
-              'globals',
-              'hasattr',
-              'hash',
-              'help',
-              'id',
-              'input',
-              'intern',
-              'isinstance',
-              'issubclass',
-              'iter',
-              'len',
-              'locals',
-              'list',
-              'map',
-              'max',
-              'memoryview',
-              'min',
-              'next',
-              'object',
-              'oct',
-              'open',
-              'ord',
-              'pow',
-              'print',
-              'property',
-              'reversed',
-              'range',
-              'raw_input',
-              'reduce',
-              'reload',
-              'repr',
-              'reversed',
-              'round',
-              'self',
-              'set',
-              'setattr',
-              'slice',
-              'sorted',
-              'staticmethod',
-              'str',
-              'sum',
-              'super',
-              'tuple',
-              'type',
-              'unichr',
-              'unicode',
-              'vars',
-              'xrange',
-              'zip',
-
-              '__dict__',
-              '__methods__',
-              '__members__',
-              '__class__',
-              '__bases__',
-              '__name__',
-              '__mro__',
-              '__subclasses__',
-              '__init__',
-              '__import__'
-            ]
-            for (let i in keyWords) {
-              suggestions.push({
-                label: keyWords[i], // 显示的提示内容
-                kind: monaco.languages.CompletionItemKind['Function'], // 用来显示提示内容后的不同的图标
-                insertText: keyWords[i], // 选择后粘贴到编辑器中的文字
-                detail: '', // 提示内容后的说明
-                range: range
-              });
-            }
-            // 基于已输入词（Token）补全
-            let tokens = self.getTokens(self.monacoEditor.getValue());
-            for (const item of tokens) {
-              if (item != word.word) {
-                suggestions.push({
-                  label: item,
-                  kind: monaco.languages.CompletionItemKind.Text,	// Text 没有特殊意义 这里表示基于文本&单词的补全
-                  documentation: "",
-                  insertText: item,
-                  range: range
-                });
-              }
-            }
-            return {suggestions};
-          }
-        });
-
-        monaco.languages.registerSignatureHelpProvider('python', {
-          signatureHelpTriggerCharacters: ['('],
-          provideSignatureHelp: function (model, position) {
-            let textUntilPosition = model.getValueInRange({
-              startLineNumber: position.lineNumber,
-              startColumn: 1,
-              endLineNumber: position.lineNumber,
-              endColumn: position.column
-            });
-
-            let currFnName = textUntilPosition.match(/.+?[(]/g)[0].replace(/[ ]/g, '').slice(0,-1)
-            let fnList = getPythonCodeFn(self.getMonacoValue())
-
-            let label = ''
-            try {
-              let result = fnList[currFnName].params.reduce((count, item) => {
-                count.push(item.name)
-                return count
-              }, [])
-              label = `${currFnName} ( ${result.join(',')} )`
-            }catch (e) {
-              label = ''
-            }
-
-            let signatures
-            if (label) {
-              signatures = [{
-                  label: label,
-                  documentation: "",
-                  parameters: []
-                }]
-            }else {
-              signatures = []
-            }
-
-            return {
-              dispose: () => {},
-              value: {
-                signatures,
-                activeSignature: 0,
-                activeParameter: 0
-              },
-            };
-
+        listen({
+          webSocket,
+          onConnection: (connection) => {
+            // create and start the language client
+            const languageClient = this.createLanguageClient(connection);
+            const disposable = languageClient.start();
+            connection.onClose(() => disposable.dispose());
           }
         });
       },
       /**
-       * 创建Ruby语法提示
+       * 创建websocket实例
        */
-      createRubyTip() {
-        let self = this
-        monaco.languages.registerCompletionItemProvider('ruby', {
-          provideCompletionItems: function (model, position) {
-            let word = model.getWordUntilPosition(position);
-            let range = {
-              startLineNumber: position.lineNumber,
-              endLineNumber: position.lineNumber,
-              startColumn: word.startColumn,
-              endColumn: word.endColumn
-            };
-
-            let suggestions = [];
-            //关键字补全
-            let keyWords = [
-              '__LINE__',
-              '__ENCODING__',
-              '__FILE__',
-              'BEGIN',
-              'END',
-              'alias',
-              'and',
-              'begin',
-              'break',
-              'case',
-              'class',
-              'def',
-              'defined?',
-              'do',
-              'else',
-              'elsif',
-              'end',
-              'ensure',
-              'for',
-              'false',
-              'if',
-              'in',
-              'module',
-              'next',
-              'nil',
-              'not',
-              'or',
-              'redo',
-              'rescue',
-              'retry',
-              'return',
-              'self',
-              'super',
-              'then',
-              'true',
-              'undef',
-              'unless',
-              'until',
-              'when',
-              'while',
-              'yield'
-            ]
-            for (let i in keyWords) {
-              suggestions.push({
-                label: keyWords[i], // 显示的提示内容
-                kind: monaco.languages.CompletionItemKind['Function'], // 用来显示提示内容后的不同的图标
-                insertText: keyWords[i], // 选择后粘贴到编辑器中的文字
-                detail: '', // 提示内容后的说明
-                range: range
-              });
-            }
-            // 基于已输入词（Token）补全
-            let tokens = self.getTokens(self.monacoEditor.getValue());
-            for (const item of tokens) {
-              if (item != word.word) {
-                suggestions.push({
-                  label: item,
-                  kind: monaco.languages.CompletionItemKind.Text,	// Text 没有特殊意义 这里表示基于文本&单词的补全
-                  documentation: "",
-                  insertText: item,
-                  range: range
-                });
-              }
-            }
-            return {suggestions};
-          }
-        });
-
-        monaco.languages.registerSignatureHelpProvider('ruby', {
-          signatureHelpTriggerCharacters: [
-            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-            '$', '_', '@'
-          ],
-          provideSignatureHelp: function (model, position) {
-            let currFnName = model.getWordUntilPosition(position);
-            let fnList = getRubyCodeFn(self.getMonacoValue())
-            
-            let label = ''
-            try {
-              let result = fnList[currFnName.word].params.reduce((count, item) => {
-                count.push(item.name)
-                return count
-              }, [])
-              label = `${currFnName.word} ( ${result.join(',')} )`
-            }catch (e) {
-              label = ''
-            }
-
-            let signatures
-            if (label) {
-              signatures = [{
-                label: label,
-                documentation: "",
-                parameters: []
-              }]
-            }else {
-              signatures = []
-            }
-
-            return {
-              dispose: () => {},
-              value: {
-                signatures,
-                activeSignature: 0,
-                activeParameter: 0
-              },
-            };
-
-          }
-        });
+      createWebSocket(url) {
+        const socketOptions = {
+          maxReconnectionDelay: 10000,
+          minReconnectionDelay: 1000,
+          reconnectionDelayGrowFactor: 1.3,
+          connectionTimeout: 10000,
+          maxRetries: Infinity,
+          debug: false,
+        };
+        return new ReconnectingWebSocket(url, [], socketOptions);
       },
-      /**
-       * 文本获取(token)
-       */
-      getTokens(code) {
-        const identifierPattern = "([a-zA-Z_]\\w*)";	// 正则表达式定义 注意转义\\w
-        let identifier = new RegExp(identifierPattern, "g");	// 注意加入参数"g"表示多次查找
-        let tokens = [];
-        let array1;
-        while ((array1 = identifier.exec(code)) !== null) {
-          tokens.push(array1[0]);
-        }
-        return Array.from(new Set(tokens));	// 去重
+      createLanguageClient(connection) {
+        return new MonacoLanguageClient({
+          name: "python Language Client",
+          clientOptions: {
+            documentSelector: ["python"],
+            errorHandler: {
+              error: () => ErrorAction.Continue,
+              closed: () => CloseAction.DoNotRestart,
+            },
+          },
+          connectionProvider: {
+            get: (errorHandler, closeHandler) => {
+              return Promise.resolve(
+                createConnection(connection, errorHandler, closeHandler)
+              );
+            },
+          },
+        });
       },
       /**
        * 文本修改回调
@@ -531,12 +269,7 @@
           this.monacoEditor.dispose();
         }
       },
-      /**
-       * 获取当前语言
-       */
-      getMonacoLanguage() {
-        return this.monacoEditor.getModel().getLanguageIdentifier().language
-      },
+
       /**
        * 断点: 添加断点
        */
@@ -600,7 +333,13 @@
        */
       getMonacoValue() {
         return this.monacoEditor.getValue()
-      }
+      },
+      /**
+       * 获取当前语言
+       */
+      getMonacoLanguage() {
+        return this.monacoEditor.getModel().getLanguageIdentifier().language
+      },
     },
     mounted() {
       this.init()
