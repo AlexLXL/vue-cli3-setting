@@ -37,13 +37,6 @@
           return ''
         }
       },
-      // manaco只读
-      readOnly: {
-        type: Boolean,
-        default: function () {
-          return false
-        }
-      },
       // manaco配置
       editorOptions: {
         type: Object,
@@ -51,7 +44,7 @@
           return {
             selectOnLineNumbers: true,
             roundedSelection: false,
-            readOnly: this.readOnly,  // 只读
+            readOnly: false,          // 只读
             cursorStyle: 'line',      // 光标样式
             automaticLayout: false,   // 自动布局
             glyphMargin: true,        // 字形边缘
@@ -71,6 +64,8 @@
     },
     methods: {
       init() {
+        this.registerLanguage()
+        this.createModel()
         this.createMonacoJS()
         this.initEventHelper()
       },
@@ -88,15 +83,45 @@
           } else if (language === 'ruby') {
             console.log('ruby')
           }
+          this.$emit('codeChange', this.monacoEditor);
           // monaco.editor.setModelLanguage(this.monacoEditor.getModel(), languageMap[language]);
         })
+      },
+      registerLanguage() {
+        // register Monaco languages
+        monaco.languages.register({
+          id: 'python',
+          extensions: ['.python', '.py', '.pyd'],
+          aliases: ['Python', 'python'],
+          mimetypes: ['application/json'],
+        });
+      },
+      createModel() {
+        let model = monaco.editor.getModel(monaco.Uri.parse("inmemory://model.json"))
+        if (!model) {
+          model = monaco.editor.createModel(
+            this.codes,
+            "javascript",
+            monaco.Uri.parse("inmemory://model.json")
+          )
+        }
+        this.model = model
+      },
+      setModelValue(v = '') {
+        this.model.setValue(v)
+      },
+      setModelLanguage(languages = 'javascript') {
+        monaco.editor.setModelLanguage(this.model, languages)
       },
       /**
        * 创建Monaco实例（js）
        */
       createMonacoJS() {
+        this.setModelLanguage('javascript')
+        this.setModelValue()
+
         this.monacoEditor = monaco.editor.create(this.$refs.container, {
-          value: this.codes, // props
+          model: this.model,
           language: 'javascript',
           theme: 'vs-dark', // 主题: vs, hc-black, vs-dark
           editorOptions: this.editorOptions // props
@@ -108,25 +133,11 @@
        * 创建Monaco实例（python）
        */
       createMonacoPython() {
-        // register Monaco languages
-        monaco.languages.register({
-          id: "python",
-          extensions: [".python", ".py", ".pyd"],
-          aliases: ["Python", "python"],
-          mimetypes: ["application/json"],
-        });
-
-        let model = monaco.editor.getModel(monaco.Uri.parse("inmemory://model.json"))
-        if (!model) {
-            model = monaco.editor.createModel(
-              this.codes,
-              "python",
-              monaco.Uri.parse("inmemory://model.json")
-            )
-        }
+        this.setModelLanguage('python')
+        this.setModelValue()
 
         this.monacoEditor = monaco.editor.create(this.$refs.container, {
-          model: model,
+          model: this.model,
           language: 'python',
           glyphMargin: true,
           theme: 'vs-dark',
@@ -141,9 +152,8 @@
           MonacoServices.get()
         }catch (e) {
           MonacoServices.install(this.monacoEditor);
+          this.connectPythonLspSocket(this.pythonLspSocket)
         }
-
-        this.connectPythonLspSocket(this.pythonLspSocket)
 
         this.createMonacoEvent()
         this.$emit('codeMounted', this.monacoEditor);

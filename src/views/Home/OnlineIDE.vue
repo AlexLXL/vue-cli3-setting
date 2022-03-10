@@ -2,7 +2,6 @@
   <div class="onlineIDE">
     <monaco
       :codes="content"
-      :readOnly="false"
       @codeChange="codeChange"
       @codeMounted="codeMounted"
     >
@@ -24,6 +23,7 @@
         this.monacoEditor = editor
       },
       codeChange(editor) {
+        console.log(editor.getValue())
         this.$EventBus.$emit('getHomeOnlineIDEValue', editor.getValue())
       }
     },
