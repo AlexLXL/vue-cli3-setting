@@ -64,29 +64,13 @@
     },
     methods: {
       init() {
-        this.registerLanguage()
-        this.createModel()
-        this.createMonacoJS()
-        this.initEventHelper()
+        this.registerLanguage()   // 注册语言
+        this.createModel()        // 创建model
+        this.createMonacoJS()     // 创建monaco实例
+        this.initEventHelper()    // 组件事件
       },
-      /**
-       * 绑定组件事件
-       */
-      initEventHelper() {
-        this.$EventBus.$on('changeHomeOnlineIDELanguage', (language) => {
-          if (language === 'js') {
-            this.destroyMonaco()
-            this.createMonacoJS()
-          } else if (language === 'python') {
-            this.destroyMonaco()
-            this.createMonacoPython()
-          } else if (language === 'ruby') {
-            console.log('ruby')
-          }
-          this.$emit('codeChange', this.monacoEditor);
-          // monaco.editor.setModelLanguage(this.monacoEditor.getModel(), languageMap[language]);
-        })
-      },
+
+      // 注册语言
       registerLanguage() {
         // register Monaco languages
         monaco.languages.register({
@@ -96,6 +80,8 @@
           mimetypes: ['application/json'],
         });
       },
+
+      // 创建model
       createModel() {
         let model = monaco.editor.getModel(monaco.Uri.parse("inmemory://model.json"))
         if (!model) {
@@ -113,9 +99,8 @@
       setModelLanguage(languages = 'javascript') {
         monaco.editor.setModelLanguage(this.model, languages)
       },
-      /**
-       * 创建Monaco实例（js）
-       */
+
+      // 创建Monaco实例（js）
       createMonacoJS() {
         this.setModelLanguage('javascript')
         this.setModelValue()
@@ -129,38 +114,7 @@
         this.createMonacoEvent()
         this.$emit('codeMounted', this.monacoEditor);
       },
-      /**
-       * 创建Monaco实例（python）
-       */
-      createMonacoPython() {
-        this.setModelLanguage('python')
-        this.setModelValue()
-
-        this.monacoEditor = monaco.editor.create(this.$refs.container, {
-          model: this.model,
-          language: 'python',
-          glyphMargin: true,
-          theme: 'vs-dark',
-          lightbulb: {
-            enabled: true,
-          },
-          editorOptions: this.editorOptions
-        })
-
-        // install Monaco language client services
-        try {
-          MonacoServices.get()
-        }catch (e) {
-          MonacoServices.install(this.monacoEditor);
-          this.connectPythonLspSocket(this.pythonLspSocket)
-        }
-
-        this.createMonacoEvent()
-        this.$emit('codeMounted', this.monacoEditor);
-      },
-      /**
-       * 绑定Monaco实例事件
-       */
+      // 绑定Monaco事件
       createMonacoEvent() {
         this.monacoEditor.onDidChangeModelContent(() => {
           this.codeChangeHandler(this.monacoEditor)
@@ -212,9 +166,48 @@
           }
         })
       },
-      /**
-       * 连接python的语法语法提示后台
-       */
+      // 文本修改回调
+      codeChangeHandler(editor) {
+        if (this.codeChangeEmitter) {
+          this.codeChangeEmitter(editor);
+        } else {
+          this.codeChangeEmitter = debounce(
+            function (editor) {
+              this.$emit('codeChange', editor);
+            }, 500
+          );
+          this.codeChangeEmitter(editor);
+        }
+      },
+
+      // 创建Monaco实例（python）
+      createMonacoPython() {
+        this.setModelLanguage('python')
+        this.setModelValue()
+
+        this.monacoEditor = monaco.editor.create(this.$refs.container, {
+          model: this.model,
+          language: 'python',
+          glyphMargin: true,
+          theme: 'vs-dark',
+          lightbulb: {
+            enabled: true,
+          },
+          editorOptions: this.editorOptions
+        })
+
+        // install Monaco language client services
+        try {
+          MonacoServices.get()
+        }catch (e) {
+          MonacoServices.install(this.monacoEditor);
+          this.connectPythonLspSocket(this.pythonLspSocket)
+        }
+
+        this.createMonacoEvent()
+        this.$emit('codeMounted', this.monacoEditor);
+      },
+      // 连接python语法提示后台
       connectPythonLspSocket() {
         const webSocket = this.createWebSocket(this.pythonLspSocket);
 
@@ -228,20 +221,19 @@
           }
         });
       },
-      /**
-       * 创建websocket实例
-       */
+      // 连接websocket
       createWebSocket(url) {
         const socketOptions = {
           maxReconnectionDelay: 10000,
           minReconnectionDelay: 1000,
           reconnectionDelayGrowFactor: 1.3,
           connectionTimeout: 10000,
-          maxRetries: Infinity,
+          maxRetries: 10,
           debug: false,
         };
         return new ReconnectingWebSocket(url, [], socketOptions);
       },
+      // 创建python语法提示客户端
       createLanguageClient(connection) {
         return new MonacoLanguageClient({
           name: "python Language Client",
@@ -261,33 +253,144 @@
           },
         });
       },
-      /**
-       * 文本修改回调
-       */
-      codeChangeHandler(editor) {
-        if (this.codeChangeEmitter) {
-          this.codeChangeEmitter(editor);
-        } else {
-          this.codeChangeEmitter = debounce(
-            function (editor) {
-              this.$emit('codeChange', editor);
-            }, 500
-          );
-          this.codeChangeEmitter(editor);
-        }
+
+      // 创建Monaco实例（ruby）
+      createMonacoRuby() {
+        this.setModelLanguage('ruby')
+        this.setModelValue()
+
+        this.monacoEditor = monaco.editor.create(this.$refs.container, {
+          model: this.model,
+          language: 'ruby',
+          theme: 'vs-dark', // 主题: vs, hc-black, vs-dark
+          editorOptions: this.editorOptions // props
+        })
+
+        this.createRubyTip()
+        this.createMonacoEvent()
+        this.$emit('codeMounted', this.monacoEditor);
       },
-      /**
-       * 销毁Monaco实例
-       */
+      // 创建Ruby语法提示1
+      createRubyTip() {
+        let self = this
+        monaco.languages.registerCompletionItemProvider('ruby', {
+          provideCompletionItems: function (model, position) {
+            let word = model.getWordUntilPosition(position);
+            let range = {
+              startLineNumber: position.lineNumber,
+              endLineNumber: position.lineNumber,
+              startColumn: word.startColumn,
+              endColumn: word.endColumn
+            };
+
+            let suggestions = [];
+            //关键字补全
+            let keyWords = [
+              '__LINE__',
+              '__ENCODING__',
+              '__FILE__',
+              'BEGIN',
+              'END',
+              'alias',
+              'and',
+              'begin',
+              'break',
+              'case',
+              'class',
+              'def',
+              'defined?',
+              'do',
+              'else',
+              'elsif',
+              'end',
+              'ensure',
+              'for',
+              'false',
+              'if',
+              'in',
+              'module',
+              'next',
+              'nil',
+              'not',
+              'or',
+              'redo',
+              'rescue',
+              'retry',
+              'return',
+              'self',
+              'super',
+              'then',
+              'true',
+              'undef',
+              'unless',
+              'until',
+              'when',
+              'while',
+              'yield'
+            ]
+            for (let i in keyWords) {
+              suggestions.push({
+                label: keyWords[i], // 显示的提示内容
+                kind: monaco.languages.CompletionItemKind['Function'], // 用来显示提示内容后的不同的图标
+                insertText: keyWords[i], // 选择后粘贴到编辑器中的文字
+                detail: '', // 提示内容后的说明
+                range: range
+              });
+            }
+            // 基于已输入词（Token）补全
+            let tokens = self.getTokens(self.monacoEditor.getValue());
+            for (const item of tokens) {
+              if (item != word.word) {
+                suggestions.push({
+                  label: item,
+                  kind: monaco.languages.CompletionItemKind.Text,	// Text 没有特殊意义 这里表示基于文本&单词的补全
+                  documentation: "",
+                  insertText: item,
+                  range: range
+                });
+              }
+            }
+            return {suggestions};
+          }
+        });
+      },
+      // 创建Ruby语法提示2
+      getTokens(code) {
+        const identifierPattern = "([a-zA-Z_]\\w*)";	// 正则表达式定义 注意转义\\w
+        let identifier = new RegExp(identifierPattern, "g");	// 注意加入参数"g"表示多次查找
+        let tokens = [];
+        let array1;
+        while ((array1 = identifier.exec(code)) !== null) {
+          tokens.push(array1[0]);
+        }
+        return Array.from(new Set(tokens));	// 去重
+      },
+
+      // 组件事件
+      initEventHelper() {
+        this.$EventBus.$on('changeHomeOnlineIDELanguage', (language) => {
+          if (language === 'js') {
+            this.destroyMonaco()
+            this.createMonacoJS()
+          } else if (language === 'python') {
+            this.destroyMonaco()
+            this.createMonacoPython()
+          } else if (language === 'ruby') {
+            this.destroyMonaco()
+            this.createMonacoRuby()
+          }
+          this.$emit('codeChange', this.monacoEditor);
+          // monaco.editor.setModelLanguage(this.monacoEditor.getModel(), languageMap[language]);
+        })
+      },
+      // 销毁Monaco实例
       destroyMonaco() {
         if (typeof this.monacoEditor !== 'undefined') {
           this.monacoEditor.dispose();
         }
       },
 
-      /**
-       * 断点: 添加断点
-       */
+      // 添加断点
       async addBreakPoint(line) {
         let model = this.monacoEditor.getModel()
         if (!model) return
@@ -297,9 +400,7 @@
         }
         model.deltaDecorations([], [value])
       },
-      /**
-       *  断点: 删除断点（如果指定了line，删除指定行的断点，否则删除当前model里面的所有断点）
-       */
+      // 删除断点（如果指定了line，删除指定行的断点，否则删除当前model里面的所有断点）
       async removeBreakPoint(line) {
         let model = this.monacoEditor.getModel()
         if (!model) return
@@ -319,9 +420,7 @@
           model.deltaDecorations(ids, [])
         }
       },
-      /**
-       * 断点: 判断是否有断点
-       */
+      // 判断是否有断点
       hasBreakPoint(line) {
         let decorations = this.monacoEditor.getLineDecorations(line)
         for (let decoration of decorations) {
@@ -331,9 +430,7 @@
         }
         return false
       },
-      /**
-       * 断点: 获取断点
-       */
+      // 获取断点
       getBreakPoint() {
         let breakpoints = this.monacoEditor
           .getModel()
@@ -343,15 +440,12 @@
           .join(',')
         console.log(breakpoints) // 3,4
       },
-      /**
-       * 获取输入框的值
-       */
+
+      // 获取输入框的值
       getMonacoValue() {
         return this.monacoEditor.getValue()
       },
-      /**
-       * 获取当前语言
-       */
+      // 获取当前语言
       getMonacoLanguage() {
         return this.monacoEditor.getModel().getLanguageIdentifier().language
       },
