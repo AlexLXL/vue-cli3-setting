@@ -16,6 +16,7 @@
     createConnection,
   } from "monaco-languageclient";
   import ReconnectingWebSocket from "reconnecting-websocket"
+  import {getRubyCodeFn} from '@/utils/genertorAST'
 
   // 插件有bug, 误删
   window.monaco = monaco
@@ -72,12 +73,56 @@
 
       // 注册语言
       registerLanguage() {
-        // register Monaco languages
+        let self = this
+
         monaco.languages.register({
           id: 'python',
           extensions: ['.python', '.py', '.pyd'],
           aliases: ['Python', 'python'],
           mimetypes: ['application/json'],
+        });
+
+        monaco.languages.registerSignatureHelpProvider('ruby', {
+          signatureHelpTriggerCharacters: [
+            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+            '$', '_', '@'
+          ],
+          provideSignatureHelp: function (model, position) {
+            let currFnName = model.getWordUntilPosition(position);
+            let fnList = getRubyCodeFn(self.getMonacoValue())
+
+            let label = ''
+            try {
+              let result = fnList[currFnName.word].params.reduce((count, item) => {
+                count.push(item.name)
+                return count
+              }, [])
+              label = `${currFnName.word} ( ${result.join(',')} )`
+            }catch (e) {
+              label = ''
+            }
+
+            let signatures
+            if (label) {
+              signatures = [{
+                label: label,
+                documentation: "",
+                parameters: []
+              }]
+            }else {
+              signatures = []
+            }
+
+            return {
+              dispose: () => {},
+              value: {
+                signatures,
+                activeSignature: 0,
+                activeParameter: 0
+              },
+            };
+          }
         });
       },
 

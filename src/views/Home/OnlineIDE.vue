@@ -23,7 +23,6 @@
         this.monacoEditor = editor
       },
       codeChange(editor) {
-        console.log(editor.getValue())
         this.$EventBus.$emit('getHomeOnlineIDEValue', editor.getValue())
       }
     },

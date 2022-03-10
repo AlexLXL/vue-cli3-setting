@@ -49,15 +49,23 @@ export function getJsCodeFn(code){
  */
 export function getPythonCodeFn(code) {
   let result = {}
-  const fnRegExp = /def.+?[:]/g
-  let fnList = code.match(fnRegExp)
-  fnList.forEach((str) => {
-    let name = str.match(/[ ].+?[(]/g)[0].replace(/[ ]/g, '').slice(0,-1)
-    let params = str.match(/[(].+?[)]/g)[0].replace(/[ ]/g, '').slice(1,-1).split(',').map((param) => {
-      return {name: param, value: ''}
+  try {
+    const fnRegExp = /def.+?[:]/g
+    let fnList = code.match(fnRegExp)
+    fnList.forEach((str) => {
+      let name = str.match(/[ ].+?[(]/g)[0].replace(/[ ]/g, '').slice(0,-1)
+      let paramsStr = str.match(/[(].+?[)]/g) ? str.match(/[(].+?[)]/g)[0] : ''
+      let params = {}
+      if (paramsStr) {
+        params = paramsStr.replace(/[ ]/g, '').slice(1,-1).split(',').map((param) => {
+          return {name: param, value: ''}
+        })
+      }
+      result[name] = {params}
     })
-    result[name] = {params}
-  })
+  }catch (error) {
+    console.error(error)
+  }
   return result
 }
 
@@ -67,15 +75,22 @@ export function getPythonCodeFn(code) {
  */
 export function getRubyCodeFn(code) {
   let result = {}
-  const fnRegExp = /def.+?[)]/g;
-  let fnList = code.match(fnRegExp)
-  console.log(fnList)
-  fnList.forEach((str) => {
-    let name = str.match(/[ ].+?[(]/g)[0].replace(/[ ]/g, '').slice(0,-1)
-    let params = str.match(/[(].+?[)]/g)[0].replace(/[ ]/g, '').slice(1,-1).split(',').map((param) => {
-      return {name: param, value: ''}
+  try {
+    const fnRegExp = /def.+?[)]/g;
+    let fnList = code.match(fnRegExp)
+    fnList.forEach((str) => {
+      let name = str.match(/[ ].+?[(]/g)[0].replace(/[ ]/g, '').slice(0,-1)
+      let paramsStr = str.match(/[(].+?[)]/g) ? str.match(/[(].+?[)]/g)[0] : ''
+      let params = {}
+      if (paramsStr) {
+        params = paramsStr.replace(/[ ]/g, '').slice(1,-1).split(',').map((param) => {
+          return {name: param, value: ''}
+        })
+      }
+      result[name] = {params}
     })
-    result[name] = {params}
-  })
+  }catch (error) {
+    // --snip--
+  }
   return result
 }

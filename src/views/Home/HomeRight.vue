@@ -3,13 +3,6 @@
     <el-form :model="formData" status-icon :rules="formRule" ref="ruleForm" class="demo-ruleForm">
 
       <div class="labelLayout">
-        <p class="formItemLabel">Shard Name</p>
-      </div>
-      <el-form-item label="" prop="shardName">
-        <el-input v-model="formData.shardName" placeholder="please enter the shard name"></el-input>
-      </el-form-item>
-
-      <div class="labelLayout">
         <p class="formItemLabel">Contract ID</p>
       </div>
       <el-form-item label="" prop="contractId">
@@ -19,6 +12,13 @@
           placeholder="please enter the call contract ID"
           v-model="formData.contractId">
         </el-input>
+      </el-form-item>
+
+      <div class="labelLayout">
+        <p class="formItemLabel">Shard Name</p>
+      </div>
+      <el-form-item label="" prop="shardName">
+        <el-input v-model="formData.shardName" placeholder="please enter the shard name"></el-input>
       </el-form-item>
 
       <div class="labelLayout">
@@ -118,6 +118,7 @@
           python: this.getPythonCodeFn,
           ruby: this.getRubyCodeFn
         }
+        this.formData.execName = ''
         execs[deployResult.languages](deployResult.contract)
       },
       getJSCodeFn(code) {
