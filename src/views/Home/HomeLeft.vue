@@ -18,7 +18,7 @@
 
       <div class="labelLayout">
         <p class="formItemLabel">Account Algorithm</p>
-        <el-button plain class="BuildBtn" size="mini" @click="verifyForm('build')">Build</el-button>
+        <el-button class="BuildBtn" size="mini" @click="verifyForm('build')">Build</el-button>
       </div>
       <el-form-item label="" prop="accountAlgorithm">
         <el-select v-model="formData.accountAlgorithm" placeholder="please choose" size="small">
@@ -38,6 +38,7 @@
         <el-input
           type="textarea"
           :rows="5"
+          resize="none"
           v-model="formData.account">
         </el-input>
       </el-form-item>
@@ -49,6 +50,7 @@
         <el-input
           type="textarea"
           :rows="5"
+          resize="none"
           v-model="formData.key">
         </el-input>
       </el-form-item>
@@ -74,6 +76,7 @@
         <el-input
           type="textarea"
           :rows="4"
+          resize="none"
           v-model="formData.remarks">
         </el-input>
       </el-form-item>
@@ -86,6 +89,7 @@
       type="textarea"
       class="deployResult"
       :rows="10"
+      disabled
       v-model="formData.deployResult">
     </el-input>
   </div>
@@ -245,6 +249,8 @@
 </script>
 
 <style scoped lang="scss">
+  @import "@/css/mixin.scss";
+
   .homeLeft {
     height: 100%;
     box-sizing: border-box;
@@ -258,41 +264,50 @@
         align-items: center;
 
         .formItemLabel {
-          font-size: 16px;
+          font-size: 18px;
+          color: #BABECC;
+          text-shadow: 1px 1px 1px #fff;
+          font-family: Montserrat, sans-serif;
+          font-weight: bold;
         }
 
         .BuildBtn {
-          background-color: #efefef;
+          @include elBtn;
         }
       }
-
 
       .el-form-item {
         .el-select {
           width: 100%;
+          /deep/ .el-input__inner {
+            @include elInputInner;
+          }
         }
 
-        .el-select {
-          width: 100%;
+        .el-textarea {
+          /deep/ .el-textarea__inner {
+            @include elTextAreaInner;
+            @include scrollBar;
+          }
         }
       }
     }
 
     .deployBtn {
       width: 100%;
-      background-color: #efefef;
+      @include elBtn;
     }
 
     .deployResult {
       margin-top: 20px;
+
+      /deep/ .el-textarea__inner {
+        @include elTextAreaInner;
+        @include scrollBar;
+      }
     }
 
-    &::-webkit-scrollbar {
-      width: 0px;
-      /*对垂直流动条有效*/
-      height: 10px;
-      /*对水平流动条有效*/
-      background-color: transparent;
-    }
+    @include scrollBar;
   }
+
 </style>

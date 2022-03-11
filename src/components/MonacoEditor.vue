@@ -47,7 +47,7 @@
             roundedSelection: false,
             readOnly: false,          // 只读
             cursorStyle: 'line',      // 光标样式
-            automaticLayout: false,   // 自动布局
+            automaticLayout: true,   // 自动布局
             glyphMargin: true,        // 字形边缘
             useTabStops: false,
             fontSize: 28,             // 字体大小
@@ -154,7 +154,8 @@
           model: this.model,
           language: 'javascript',
           theme: 'vs-dark', // 主题: vs, hc-black, vs-dark
-          editorOptions: this.editorOptions // props
+          editorOptions: this.editorOptions, // props
+          automaticLayout: true
         })
         this.createMonacoEvent()
         this.$emit('codeMounted', this.monacoEditor);
@@ -238,7 +239,8 @@
           lightbulb: {
             enabled: true,
           },
-          editorOptions: this.editorOptions
+          editorOptions: this.editorOptions,
+          automaticLayout: true
         })
 
         // install Monaco language client services
@@ -308,7 +310,8 @@
           model: this.model,
           language: 'ruby',
           theme: 'vs-dark', // 主题: vs, hc-black, vs-dark
-          editorOptions: this.editorOptions // props
+          editorOptions: this.editorOptions, // props
+          automaticLayout: true
         })
 
         this.createRubyTip()

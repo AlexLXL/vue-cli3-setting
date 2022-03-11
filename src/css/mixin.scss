@@ -1,0 +1,85 @@
+@mixin elInputInner(){
+  box-shadow: inset 2px 2px 5px var(--greyLight-2), inset -5px -5px 10px var(--white);
+  color: #887575;
+  background: none;
+  border-radius: 1rem;
+  border: none;
+
+  &:focus {
+    box-shadow: inset 1px 1px 2px var(--greyLight-2), inset -1px -1px 2px var(--white);
+    outline: none;
+  }
+}
+
+@mixin elTextAreaInner() {
+  box-shadow: inset 2px 2px 5px var(--greyLight-2), inset -5px -5px 10px var(--white);
+  color: #887575;
+  background: none;
+  border-radius: 1rem;
+  border: none;
+
+  &:focus {
+    box-shadow: inset 1px 1px 2px var(--greyLight-2), inset -1px -1px 2px var(--white);
+    outline: none;
+  }
+}
+
+@mixin elBtn() {
+  color: #887575;
+  font-weight: bold;
+  border-radius: 8px;
+  box-shadow: -5px -5px 20px var(--white), 5px 5px 20px var(--greyLight-2);
+  text-shadow: 1px 1px 0 var(--white);
+  transition: all 0.2s ease-in-out;
+  font-family: Montserrat, sans-serif;
+  border: none;
+  outline: none;
+  background-color: #EBECF0;
+
+  &:hover {
+    box-shadow: -2px -2px 5px var(--white), 2px 2px 5px var(--greyLight-2);
+  }
+
+  &:active {
+    box-shadow: inset 1px 1px 2px var(--greyLight-2), inset -1px -1px 2px var(--white);
+  }
+}
+
+@mixin scrollBar() {
+  &::-webkit-scrollbar {
+    width: 6px;
+    /*对垂直流动条有效*/
+    height: 10px;
+    /*对水平流动条有效*/
+    background-color: transparent;
+  }
+
+  /*定义滚动条的轨道颜色、内阴影及圆角*/
+  &::-webkit-scrollbar-track {
+    background-color: #E6ECF1;
+    border-radius: 3px;
+  }
+
+  /*定义滑块颜色、内阴影及圆角*/
+  &::-webkit-scrollbar-thumb {
+    border-radius: 3px;
+    background-color: #babecc;
+  }
+
+  /*定义两端按钮的样式*/
+  &::-webkit-scrollbar-button {
+    display: none;
+  }
+
+  /*定义右下角汇合处的样式*/
+  &::-webkit-scrollbar-corner {
+    border-radius: 3px;
+    background-color: transparent;
+  }
+
+  //滚动条鼠标移上去的样式
+  &::-webkit-scrollbar-thumb:vertical:hover,::-webkit-scrollbar-thumb:horizontal:hover
+  {
+    background-color: #808080;
+  }
+}

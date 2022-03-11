@@ -9,6 +9,7 @@
         <el-input
           type="textarea"
           :rows="3"
+          resize="none"
           placeholder="please enter the call contract ID"
           v-model="formData.contractId">
         </el-input>
@@ -36,7 +37,7 @@
         </el-select>
       </el-form-item>
 
-      <div class="labelLayout">
+      <div class="labelLayout" v-if="formData.execList[formData.execName]">
         <p class="formItemLabel">Parameter</p>
       </div>
       <div v-if="formData.execList[formData.execName]">
@@ -51,6 +52,7 @@
           <el-input
             type="textarea"
             :rows="3"
+            resize="none"
             placeholder="please input parameter"
             v-model="formData.parameter">
           </el-input>
@@ -64,6 +66,7 @@
       v-show="formData.callResultVisible"
       type="textarea"
       class="callResult"
+      disabled
       :rows="10"
       v-model="formData.callResult">
     </el-input>
@@ -144,9 +147,9 @@
           fp = this.formData.execList[this.formData.execName].params.reduce((total, item) => {
             total += `${item.value},`
             return total
-          }, '[')
+          }, '')
           fp = fp.slice(0, -1)
-          fp += ']'
+          fp = '[' + fp + ']'
         } else {
           fp = this.formData.parameter
         }
@@ -173,6 +176,8 @@
 </script>
 
 <style scoped lang="scss">
+  @import "@/css/mixin.scss";
+
   .homeRight {
     height: 100%;
     box-sizing: border-box;
@@ -186,35 +191,51 @@
         align-items: center;
 
         .formItemLabel {
-          font-size: 16px;
+          font-size: 18px;
+          color: #BABECC;
+          text-shadow: 1px 1px 1px #fff;
+          font-family: Montserrat, sans-serif;
+          font-weight: bold;
         }
       }
-
 
       .el-form-item {
         .el-input {
           width: 100%;
+          /deep/ .el-input__inner {
+            @include elInputInner;
+          }
         }
 
         .el-select {
           width: 100%;
+          /deep/ .el-input__inner {
+            @include elInputInner;
+          }
+        }
+
+        .el-textarea {
+          /deep/ .el-textarea__inner {
+            @include elTextAreaInner;
+          }
         }
       }
     }
 
     .callBtn {
       width: 100%;
-      background-color: #efefef;
+      @include elBtn;
     }
 
     .callResult {
       margin-top: 20px;
+
+      /deep/ .el-textarea__inner {
+        @include elTextAreaInner;
+        @include scrollBar;
+      }
     }
 
-    &::-webkit-scrollbar {
-      width: 0px;
-      height: 10px;
-      background-color: transparent;
-    }
+    @include scrollBar;
   }
 </style>

@@ -12,6 +12,7 @@ npm i
 ```
 npm run serve
 ```
+打开 `http://localhost:8080/` (用ip打开会跨域哦)
 
 ### Compiles and minifies for production
 ```

@@ -34,10 +34,20 @@
 </script>
 
 <style scoped lang="scss">
+  @import "@/css/mixin.scss";
+
   .onlineIDE {
-    width: 100%;
-    height: 100%;
+    width: 99%;
+    height: 99%;
+    padding: 1%;
     box-sizing: border-box;
-    overflow: auto;
+    border-radius: 20px;
+    overflow: hidden;
+
+    &::-webkit-scrollbar {
+      width: 0;
+      height: 10px;
+      background-color: transparent;
+    }
   }
 </style>

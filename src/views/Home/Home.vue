@@ -41,7 +41,9 @@ export default {
 
 <style scoped lang="scss">
   .home {
+    background-color: #ebecf0;
     height: 100%;
+    overflow: hidden;
 
     .el-row {
       height: 100%;
