@@ -192,8 +192,7 @@
 
         .formItemLabel {
           font-size: 18px;
-          color: #BABECC;
-          text-shadow: 1px 1px 1px #fff;
+          color: #fff;
           font-family: Montserrat, sans-serif;
           font-weight: bold;
         }

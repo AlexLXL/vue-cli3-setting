@@ -41,7 +41,7 @@ export default {
 
 <style scoped lang="scss">
   .home {
-    background-color: #ebecf0;
+    background-color: #3c3f41;
     height: 100%;
     overflow: hidden;
 
